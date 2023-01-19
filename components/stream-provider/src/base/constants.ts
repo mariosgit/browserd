@@ -19,6 +19,11 @@ export const K_PRELOAD_LOGGER_KEY = "logger";
 export const K_CAPTURE_WIN = "capture-win";
 
 /**
+ * Flag used to get the id of the window to capture
+ */
+ export const K_CAPTURE_WINID = "capture-winid";
+
+/**
  * Flag used to store our browser signal configuration
  */
 export const K_SIGNAL_CONFIG = "signal-conf";

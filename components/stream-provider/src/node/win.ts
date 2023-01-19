@@ -1,6 +1,7 @@
 import { BrowserWindow as ElectronBrowserWindow } from "electron";
 import { IWindowConstructorOpts, IWindowProvider } from "../base/window-provider";
 import { BrowserWindow } from "./browser-window";
+import { EventEmitter } from 'events';
 
 /**
  * Electron BrowserWindow provider
@@ -38,7 +39,7 @@ export class Win implements IWindowProvider {
     });
 
     // block middle-clicking, which opens a new window
-    rawWin.webContents.on("new-window", (e) => {
+    (rawWin.webContents as EventEmitter).on("new-window", (e:any) => {
       e.preventDefault();
     });
 
@@ -55,14 +56,19 @@ export class Win implements IWindowProvider {
       e.preventDefault();
     });
 
-    const windowShown = new Promise((resolve) => {
+    const windowShown = new Promise<void>((resolve) => {
       rawWin.once("ready-to-show", () => {
         rawWin.show();
         resolve();
       });
     });
 
-    await Promise.all([windowShown, rawWin.loadURL(opts.url)]);
+    if(opts.url.startsWith('file')) {
+      // create a empty html. It helps with debugging/source mapping.
+      await Promise.all([windowShown, rawWin.loadFile("../stream-provider/dist/stream-provider/src/browser/index.html")]);
+    } else {
+      await Promise.all([windowShown, rawWin.loadURL(opts.url)]);
+    }
 
     // externally, we expose the wrapped window type
     return win;

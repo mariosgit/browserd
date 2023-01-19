@@ -72,7 +72,7 @@ export class Application implements IApplication {
       streamProvider,
       webrtcProvider,
       inputHandler } = this.opts;
-    logger.info("Browser: initializing application");
+    logger.info("Browser: initializing application", this.opts);
 
     const rawDevices = await streamProvider.enumerateDevices();
 
@@ -80,6 +80,10 @@ export class Application implements IApplication {
       logger.info("Browser: found available devices", rawDevices);
     } else {
       throw new Error(`Unable to find devices`);
+    }
+
+    for(let rawDev of rawDevices) {
+        logger.info(JSON.stringify(rawDev));
     }
 
     const matchedDevice = rawDevices.find((e) => e.name === captureWindowTitle);
@@ -123,7 +127,11 @@ export class Application implements IApplication {
     });
     webrtcProvider.on("data", (data) => {
       data = data.toString();
-      inputHandler.processAndRaiseMessage(JSON.parse(data) as IInputMessage);
+      if(inputHandler) {
+        inputHandler.processAndRaiseMessage(JSON.parse(data) as IInputMessage);
+      } else {
+        logger.warn('webrtcProvider.on("data"... missing inputHandler', data);
+      }
     });
   }
 }

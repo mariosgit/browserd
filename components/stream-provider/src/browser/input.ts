@@ -1,28 +1,31 @@
-import { WebContents } from "electron";
+import { ipcRenderer } from "electron";
 import { IInputHandler, IInputMessage } from "../base/input-handler";
 
 /**
  * Input handler for electron WebContents
  */
 export class Input implements IInputHandler {
-  private webContents: WebContents;
+  private windowid: number; //webContents: WebContents;
 
   /**
    * Default ctor
-   * @param webContents the electron WebContents instance to bind to
+   * @param windowId the electron WindowId to bind to
    */
-  public constructor(webContents: WebContents) {
-    this.webContents = webContents;
+  public constructor(windowid: number) {
+    this.windowid = windowid;
   }
 
   public processAndRaiseMessage(msg: IInputMessage) {
+    // console.log(`processAndRaiseMessage 1, ${this.windowid}, ${msg}`);
     const events = this.convertToElectronMessages(msg) as any[];
 
     events.filter((evt) => evt != null)
-    .forEach((evt) => {
-      // raise all the events on the electron control
-      this.webContents.sendInputEvent(evt);
-    });
+      .forEach((evt) => {
+        // raise all the events on the electron control
+        // this.webContents.sendInputEvent(evt);
+        ipcRenderer.send('sendInputEvent', this.windowid, evt);
+        // console.log(`processAndRaiseMessage 2, ${this.windowid}, ${evt});`);
+      });
   }
 
   /**
@@ -76,6 +79,15 @@ export class Input implements IInputHandler {
           button: "left",
           clickCount: 1,
           type: "mouseUp",
+          x: pointer.x,
+          y: pointer.y,
+        };
+      case "move":
+        // emit a left-click (release) at that location
+        return {
+          button: "left",
+          clickCount: 1,
+          type: "mouseMove",
           x: pointer.x,
           y: pointer.y,
         };

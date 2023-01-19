@@ -71,6 +71,7 @@ export type ITouchMessage = IInputMessage<{ pointers: IPointerData[] }>;
 /**
  * Html input events used by {InputMonitor}
  */
+
 export enum HtmlInputEvents {
   /**
    * Event that occurs when the mouse is down
@@ -81,6 +82,7 @@ export enum HtmlInputEvents {
    * Event that occurs when the mouse is released
    */
   Mouseup = "mouseup",
+  Mousemove = "mousemove"
 }
 
 /**
@@ -97,6 +99,10 @@ export class InputMonitor extends EventEmitter {
 
     video.addEventListener(HtmlInputEvents.Mouseup, (e) => {
       this.generateAndEmitMouse(video, e, TouchState.End, HtmlInputEvents.Mouseup);
+    });
+
+    video.addEventListener(HtmlInputEvents.Mousemove, (e) => {
+      this.generateAndEmitMouse(video, e, TouchState.Move, HtmlInputEvents.Mousemove);
     });
   }
 

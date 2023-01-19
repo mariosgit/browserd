@@ -35,7 +35,7 @@ export const requestTwilioTurnServer = async (accountSid: string, authToken: str
         if (twilioIceServer.url.startsWith("turn:")) {
             iceServers.push({
                 credential: twilioIceServer.credential,
-                credentialType: "password",
+                // credentialType: "password",
                 urls: twilioIceServer.url,
                 username: twilioIceServer.username,
             });

@@ -7,7 +7,6 @@ import { BaseSignalProvider, ISignalPeer } from "../../shared/src/signal-provide
 import { HtmlInputEvents, InputMonitor } from "./input";
 
 const logger = pino();
-
 /**
  * Connect to signaling server and get stream provider id
  */
@@ -18,9 +17,10 @@ export const signIn = async (signalProvider: BaseSignalProvider) => {
   // Get stream provider id
   let streamProviderId;
   const peers = await signalProvider.signIn(peerName);
+  console.log("signIn:peers:", peers);
   const streamConsumerId = signalProvider.id;
   peers.forEach((peer: ISignalPeer) => {
-    if (peer.id !== streamConsumerId) {
+    if (peer.connected && peer.id !== streamConsumerId) {
       streamProviderId = peer.id;
     }
   });
@@ -69,7 +69,7 @@ export const connect = async () => {
   const iceServers: RTCIceServer[] = [
     {
       credential: $("#turn-password").val() as string,
-      credentialType: "password",
+      //   credentialType: "password",
       urls: [$("#turn-server").val() as string],
       username: $("#turn-username").val() as string,
     },
@@ -88,8 +88,8 @@ export const connect = async () => {
   peer.on("close", () => logger.info("disconnect"));
   peer.on("signal", async (data) => {
     // unwrap
-    if (data.candidate) {
-      data = data.candidate;
+    if ((data as any).candidate) {
+      data = (data as any).candidate;
     }
 
     await signalProvider.send(JSON.stringify(data), providerId);
@@ -98,6 +98,15 @@ export const connect = async () => {
   peer.on("stream", (rstream: MediaStream) => {
     startStreaming(rstream, peer);
   });
+
+  // save settings
+  const store = window.localStorage;
+  store.setItem('turn', $("#turn-server").val() as string);
+  store.setItem('sign', $("#signaling-server").val() as string);
+  store.setItem('uname', $("#turn-username").val() as string);
+  store.setItem('upass', $("#turn-password").val() as string);
+  store.setItem('poll', $("#poll-interval").val() as string);
+
 };
 
 export const startStreaming = (rstream: MediaStream, peer: SimplePeer.Instance) => {
@@ -114,8 +123,24 @@ export const startStreaming = (rstream: MediaStream, peer: SimplePeer.Instance) 
 
   inputMonitor.on(HtmlInputEvents.Mouseup, sendInputToPeer);
   inputMonitor.on(HtmlInputEvents.Mousedown, sendInputToPeer);
+  inputMonitor.on(HtmlInputEvents.Mousemove, sendInputToPeer);
 };
 
 $(document).ready(() => {
   $("#connect").click(() => connect());
+
+  // populate settings
+  const store = window.localStorage;
+  let turn = store.getItem('turn');
+  let sign = store.getItem('sign');
+  let uname = store.getItem('uname');
+  let upass = store.getItem('upass');
+  let poll = store.getItem('poll');
+  if (turn && sign && uname && upass && poll) {
+    $("#poll-interval").val(poll);
+    $("#signaling-server").val(sign);
+    $("#turn-password").val(upass);
+    $("#turn-server").val(turn);
+    $("#turn-username").val(uname);
+  }
 });

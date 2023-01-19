@@ -10,7 +10,7 @@ export interface IUserMediaOpts {
    * Browser-provided getSources API
    * ex: https://electronjs.org/docs/api/desktop-capturer#desktopcapturergetsourcesoptions-callback
    */
-  getSources: (opts: SourcesOptions, cb: (err: Error, sources: DesktopCapturerSource[]) => void) => void;
+  getSources: (opts: SourcesOptions, cb: (err: Error|undefined, sources: DesktopCapturerSource[]) => void) => void;
 
   /**
    * Browser-provided getUserMedia API

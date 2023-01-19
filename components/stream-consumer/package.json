@@ -4,7 +4,7 @@
   "description": "The component that consumes and interacts with content from the cloud",
   "scripts": {
     "lint": "tslint -p .",
-    "build": "tsc -p . && browserify dist/stream-consumer/src/main.js -o dist/stream-consumer/src/bundle.js",
+    "build": "tsc -p . && browserify -d dist/stream-consumer/src/main.js -o dist/stream-consumer/src/bundle.js",
     "test": "jest --coverage"
   },
   "build": {
@@ -24,24 +24,24 @@
   },
   "dependencies": {
     "@browserd/shared": "^1.0.0",
-    "pino": "^5.12.6",
-    "simple-peer": "^9.3.0",
+    "pino": "^8.8.0",
+    "simple-peer": "^9.11.1",
     "strict-event-emitter-types": "^2.0.0",
-    "uuid": "^3.3.2"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.13",
-    "@types/jquery": "^3.3.31",
-    "@types/pino": "^5.8.8",
-    "@types/simple-peer": "^6.1.5",
-    "@types/uuid": "^3.4.4",
-    "browserify": "^16.3.0",
-    "jest": "^24.8.0",
-    "jest-fetch-mock": "^2.1.2",
+    "@types/jest": "^29.2.5",
+    "@types/jquery": "^3.5.16",
+    "@types/pino": "^7.0.4",
+    "@types/simple-peer": "^9.11.5",
+    "@types/uuid": "^9.0.0",
+    "browserify": "^17.0.0",
+    "jest": "^29.3.1",
+    "jest-fetch-mock": "^3.0.3",
     "jest-sonar-reporter": "^2.0.0",
-    "jquery": "^3.4.1",
-    "ts-jest": "^24.0.2",
-    "tslint": "^5.17.0",
-    "typescript": "^3.5.1"
+    "jquery": "^3.6.3",
+    "ts-jest": "^29.0.4",
+    "tslint": "^5.20.1",
+    "typescript": "^4.9.4"
   }
 }

@@ -6,6 +6,7 @@ import {
   K_BROWSER_CONFIG,
   K_BROWSER_STORAGE,
   K_CAPTURE_WIN,
+  K_CAPTURE_WINID,
   K_PRELOAD_LOGGER_KEY,
   K_SIGNAL_CONFIG,
 } from "../base/constants";
@@ -39,6 +40,11 @@ interface IApplicationOpts {
    * The capture window name
    */
   captureWindowTitle: string;
+
+  /**
+   * The capture window id :-O
+   */
+   captureWindowId: number;
 
   /**
    * Signal configuration
@@ -92,8 +98,8 @@ export class Application implements IApplication {
 
     logger.info("Node: creating browser");
 
-    await winProvider.createWindow({
-      alwaysOnTop: true,
+    const contentWindow = await winProvider.createWindow({
+      alwaysOnTop: false,
       backgroundColor: "#000",
       height,
       logger,
@@ -102,35 +108,49 @@ export class Application implements IApplication {
       webPreferences: {
         contextIsolation: true,
         disableBlinkFeatures: "Auxclick",
+        // offscreen: true
       },
       width,
+      frame: false,
+      paintWhenInitiallyHidden: true,
+      show: false
     });
+    contentWindow.toBrowserWindow().webContents.backgroundThrottling = false;
+    contentWindow.toBrowserWindow().menuBarVisible = false;
+    // contentWindow.toBrowserWindow().webContents.setFrameRate(25);
+    // contentWindow.toBrowserWindow().hide();
+    // contentWindow.toBrowserWindow().show();
 
     logger.info("Node: created browser");
 
     // give our content window another second - to be sure x is happy
-    await new Promise((resolve) => setTimeout(() => resolve(), 1000));
+    await new Promise<void>((resolve) => setTimeout(() => resolve(), 1000));
 
     // setup our globals so the streamer-process can access it's config
     this.setGlobals({
-      captureWindowTitle,
-      logger,
-      signalConfig,
-      streamerConfig,
+      captureWindowTitle:captureWindowTitle,
+      captureWindowId:contentWindow.toBrowserWindow().id,
+      logger:logger,
+      signalConfig:signalConfig,
+      streamerConfig:streamerConfig,
     });
 
     logger.info("Node: creating streamer");
 
     const streamerWindow = await winProvider.createWindow({
-      height: 10,
+      height: 900,
       logger,
-      url: "chrome://webrtc-internals",
+      url: "file:thisWillLoadIndex.html", // "chrome://webrtc-internals", // local file is better to get code maps loaded in dev tools, create a index.html in dist..
       webPreferences: {
         // this is what triggers our actual streamer logic (webrtc init and whatnot)
         preload: path.join(__dirname, "/../browser/main.js"),
+        contextIsolation: false,
+        sandbox: false
       },
-      width: 10,
+      width: 1280,
     });
+    streamerWindow.toBrowserWindow().webContents.openDevTools();
+    streamerWindow.toBrowserWindow().show();
 
     logger.info("Node: created streamer");
 
@@ -145,17 +165,13 @@ export class Application implements IApplication {
    * Set globals
    * @param opts the global values
    */
-  private setGlobals({
-    captureWindowTitle,
-    logger,
-    signalConfig,
-    streamerConfig,
-  }: Partial<IApplicationOpts>) {
+  private setGlobals(thing: Partial<IApplicationOpts>) {
     const glob: { [key: string]: any } = {};
-    glob[K_CAPTURE_WIN] = captureWindowTitle;
-    glob[K_PRELOAD_LOGGER_KEY] = logger;
-    glob[K_BROWSER_CONFIG] = streamerConfig;
-    glob[K_SIGNAL_CONFIG] = signalConfig;
+    glob[K_CAPTURE_WIN] = thing.captureWindowTitle;
+    glob[K_CAPTURE_WINID] = thing.captureWindowId;
+    glob[K_PRELOAD_LOGGER_KEY] = thing.logger;
+    glob[K_BROWSER_CONFIG] = thing.streamerConfig;
+    glob[K_SIGNAL_CONFIG] = thing.signalConfig;
     (global as any)[K_BROWSER_STORAGE] = glob;
   }
 }

@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { app as electronApp } from "electron";
+import { app as electronApp, desktopCapturer, ipcMain, BrowserWindow as ElectronBrowserWindow } from 'electron';
 import pino from "pino";
 import url from "url";
 import { Application } from "./application";
@@ -32,12 +32,12 @@ const logger = pino();
  * + TWILIO_AUTH_TOKEN (string) - a Twilio AuthToken required to get a Network Traversal Service Token
  */
 const dotenv = config();
-let mutableEnv: {[key: string]: string | undefined} = {};
+let mutableEnv: { [key: string]: string | undefined } = {};
 if (dotenv.error) {
   logger.warn(`dotenv failed: ${dotenv.error}`);
 }
-mutableEnv = {...process.env, ...dotenv.parsed};
-const env: {[key: string]: string} = mutableEnv as {[key: string]: string};
+mutableEnv = { ...process.env, ...dotenv.parsed };
+const env: { [key: string]: string } = mutableEnv as { [key: string]: string };
 
 // early exit if missing critical environment variables
 [
@@ -63,7 +63,7 @@ electronApp.on("ready", async () => {
   let iceServers: RTCIceServer[] = [
     {
       credential: env.TURN_PASSWORD,
-      credentialType: "password",
+      //   credentialType: "password",
       urls: [env.TURN_URL],
       username: env.TURN_USERNAME,
     },
@@ -82,6 +82,7 @@ electronApp.on("ready", async () => {
 
   app = new Application({
     captureWindowTitle: url.parse(env.SERVICE_URL || "no-window").hostname as string,
+    captureWindowId: 0,
     expHideStreamer: env.EXP_HIDE_STREAMER === "true",
     height: Number.parseInt(env.HEIGHT, 10).valueOf(),
     logger,
@@ -106,4 +107,41 @@ electronApp.on("ready", async () => {
   });
 });
 
-module.exports = runtimeIgnoredExportValue;
+// IPC handlers
+
+ipcMain.handle('getGlobal', async (event, someArgument) => {
+  logger.info("ipcMain.handle 'getGlobal'", someArgument);
+  let result = (global as any)[someArgument];
+  let json = JSON.stringify(result);
+  // console.log(json);
+  return json;
+});
+
+ipcMain.handle('getSources', async (event, someArgument) => {
+  let result = await desktopCapturer.getSources({ types: ['window', 'screen'] });
+  logger.info("ipcMain.handle 'getSources' result:", JSON.stringify(result));
+
+  // missing electron windows :( https://github.com/electron/electron/issues/29931
+
+  // workaround ???
+  result = [];
+  for(let win of ElectronBrowserWindow.getAllWindows()) {
+    logger.info(`ipcMain.handle 'getSources' - win data: ${win.title} ${win.getMediaSourceId()} `);
+    (result as any).push({name: win.title, id: win.getMediaSourceId()});
+  }
+
+  return result;
+});
+
+ipcMain.on('sendInputEvent', (event, winid, evt) => {
+  // logger.info(`sendInputEvent winid:${winid} ${JSON.stringify(evt)}`);
+
+  for(let win of ElectronBrowserWindow.getAllWindows()) {
+    if(win.id == winid) {
+      win.webContents.sendInputEvent(evt);
+      break;
+    }
+  }
+});
+
+// module.exports = runtimeIgnoredExportValue;
