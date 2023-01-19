@@ -4,10 +4,8 @@ import { EventEmitter } from "events";
  * Represents the different types of input messages
  */
 export enum MessageTypes {
-  /**
-   * Indicates message is of the {ITouchMessage} type
-   */
   touch = "touch",
+  wheel = "wheel"
 }
 
 /**
@@ -50,6 +48,8 @@ export enum TouchState {
    * Indicates touch movement (as a touch event)
    */
   Move = "move",
+
+  None = "none"
 }
 
 /**
@@ -63,26 +63,29 @@ export interface IPointerData {
   state: TouchState;
 }
 
+export interface IWheelData {
+  dx: number;
+  dy: number;
+  dz: number;
+  mode: number;
+}
+
 /**
  * The {ITouchMessage} - a touch representation of an {IInputMessage}
  */
 export type ITouchMessage = IInputMessage<{ pointers: IPointerData[] }>;
+
+export type IWheelMessage = IInputMessage<{ pointers: IWheelData[] }>;
 
 /**
  * Html input events used by {InputMonitor}
  */
 
 export enum HtmlInputEvents {
-  /**
-   * Event that occurs when the mouse is down
-   */
   Mousedown = "mousedown",
-
-  /**
-   * Event that occurs when the mouse is released
-   */
   Mouseup = "mouseup",
-  Mousemove = "mousemove"
+  Mousemove = "mousemove",
+  Wheel = "wheel"
 }
 
 /**
@@ -96,13 +99,14 @@ export class InputMonitor extends EventEmitter {
     video.addEventListener(HtmlInputEvents.Mousedown, (e) => {
       this.generateAndEmitMouse(video, e, TouchState.Start, HtmlInputEvents.Mousedown);
     });
-
     video.addEventListener(HtmlInputEvents.Mouseup, (e) => {
       this.generateAndEmitMouse(video, e, TouchState.End, HtmlInputEvents.Mouseup);
     });
-
     video.addEventListener(HtmlInputEvents.Mousemove, (e) => {
       this.generateAndEmitMouse(video, e, TouchState.Move, HtmlInputEvents.Mousemove);
+    });
+    video.addEventListener(HtmlInputEvents.Wheel, (e) => {
+      this.generateAndEmitWheel(video, e);
     });
   }
 
@@ -117,6 +121,7 @@ export class InputMonitor extends EventEmitter {
     const { top, left } = video.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
+
 
     const msg: ITouchMessage = {
       data: {
@@ -135,5 +140,23 @@ export class InputMonitor extends EventEmitter {
     };
 
     this.emit(type, msg);
+  }
+
+  private generateAndEmitWheel(video: HTMLElement, event: WheelEvent) {
+    const msg: IWheelMessage = {
+      data: {
+        pointers: [
+          {
+            dx: event.deltaX,
+            dy: event.deltaY,
+            dz: event.deltaZ,
+            mode: event.deltaMode
+          }
+        ]
+      },
+      type: MessageTypes.wheel,
+      version: 1
+    }
+    this.emit(HtmlInputEvents.Wheel, msg);
   }
 }

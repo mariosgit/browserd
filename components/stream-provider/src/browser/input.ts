@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { ipcRenderer, MouseWheelInputEvent } from "electron";
 import { IInputHandler, IInputMessage } from "../base/input-handler";
 
 /**
@@ -29,7 +29,8 @@ export class Input implements IInputHandler {
   }
 
   /**
-   * Converts wire messages to electron messages
+   * Converts wire messages to electron messages for use in webContents.sendInputEvent(e);
+   * ref: https://www.electronjs.org/docs/latest/api/web-contents#contentssendinputeventinputevent
    * @param msg wire message to convert
    * @returns converted electron messages
    */
@@ -49,8 +50,29 @@ export class Input implements IInputHandler {
         const keyData = msg.data as { key: string, state: string };
 
         return [this.convertSingleKey(keyData)];
+
+      case "wheel":
+        // move to share !!!
+        // export interface IWheelData {
+        //   dx: number;
+        //   dy: number;
+        //   dz: number;
+        //   mode: number;
+        // }
+
+        const wheelData = msg.data as { pointers: any[] };
+        let mwie: MouseWheelInputEvent = {
+          x: 0,
+          y: 0,
+          type: "mouseWheel",
+          deltaX: wheelData.pointers[0].dx,
+          deltaY: wheelData.pointers[0].dy
+        };
+        return [mwie];
+
       default:
-        throw new Error(`Unsupported Message Type: ${msg.type}`);
+        console.warn(`Input:convertToElectronMessages: Unsupported Message Type: ${msg.type}`);
+        // throw new Error(`Unsupported Message Type: ${msg.type}`);
     }
   }
 

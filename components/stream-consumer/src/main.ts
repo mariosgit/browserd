@@ -118,12 +118,14 @@ export const startStreaming = (rstream: MediaStream, peer: SimplePeer.Instance) 
   // Input handling
   const inputMonitor = new InputMonitor(videoElement[0]);
   const sendInputToPeer = (data: any) => {
+    // console.log('sendInputToPeer', data);
     peer.send(JSON.stringify(data));
   };
 
   inputMonitor.on(HtmlInputEvents.Mouseup, sendInputToPeer);
   inputMonitor.on(HtmlInputEvents.Mousedown, sendInputToPeer);
   inputMonitor.on(HtmlInputEvents.Mousemove, sendInputToPeer);
+  inputMonitor.on(HtmlInputEvents.Wheel, sendInputToPeer);
 };
 
 $(document).ready(() => {
