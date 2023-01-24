@@ -31,9 +31,9 @@ export class Peer extends BaseWebrtcProvider {
   }
 
   public initialize(iceServers: RTCIceServer[], stream: IStream) {
-    if (this.instance) {
-      throw new Error("Already initialized");
-    }
+    // if (this.instance) {
+    //   throw new Error("Already initialized");
+    // }
 
     // as SimplePeer needs <any> transformers, we must do that mapping
     // for it
