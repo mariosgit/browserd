@@ -3,9 +3,11 @@ import { EventEmitter } from "events";
 /**
  * Represents the different types of input messages
  */
+
 export enum MessageTypes {
   touch = "touch",
-  wheel = "wheel"
+  wheel = "wheel",
+  resize = "resize"
 }
 
 /**
@@ -77,6 +79,8 @@ export type ITouchMessage = IInputMessage<{ pointers: IPointerData[] }>;
 
 export type IWheelMessage = IInputMessage<{ pointers: IWheelData[] }>;
 
+export type IResizeMessage = IInputMessage<{ width: number, height: number }>;
+
 /**
  * Html input events used by {InputMonitor}
  */
@@ -85,7 +89,8 @@ export enum HtmlInputEvents {
   Mousedown = "mousedown",
   Mouseup = "mouseup",
   Mousemove = "mousemove",
-  Wheel = "wheel"
+  Wheel = "wheel",
+  Resize = "resize"
 }
 
 /**
@@ -96,18 +101,21 @@ export class InputMonitor extends EventEmitter {
   constructor(video: HTMLElement) {
     super();
 
-    video.addEventListener(HtmlInputEvents.Mousedown, (e) => {
-      this.generateAndEmitMouse(video, e, TouchState.Start, HtmlInputEvents.Mousedown);
+    video.addEventListener(HtmlInputEvents.Mousedown, (evt) => {
+      this.generateAndEmitMouse(video, evt, TouchState.Start, HtmlInputEvents.Mousedown);
     });
-    video.addEventListener(HtmlInputEvents.Mouseup, (e) => {
-      this.generateAndEmitMouse(video, e, TouchState.End, HtmlInputEvents.Mouseup);
+    video.addEventListener(HtmlInputEvents.Mouseup, (evt) => {
+      this.generateAndEmitMouse(video, evt, TouchState.End, HtmlInputEvents.Mouseup);
     });
-    video.addEventListener(HtmlInputEvents.Mousemove, (e) => {
-      this.generateAndEmitMouse(video, e, TouchState.Move, HtmlInputEvents.Mousemove);
+    video.addEventListener(HtmlInputEvents.Mousemove, (evt) => {
+      this.generateAndEmitMouse(video, evt, TouchState.Move, HtmlInputEvents.Mousemove);
     });
-    video.addEventListener(HtmlInputEvents.Wheel, (e) => {
-      this.generateAndEmitWheel(video, e);
+    video.addEventListener(HtmlInputEvents.Wheel, (evt) => {
+      this.generateAndEmitWheel(video, evt);
     });
+    window.addEventListener(HtmlInputEvents.Resize, (evt) => {
+      this.generateAndEmitResize(video, evt);
+    })
   }
 
   /**
@@ -158,5 +166,17 @@ export class InputMonitor extends EventEmitter {
       version: 1
     }
     this.emit(HtmlInputEvents.Wheel, msg);
+  }
+
+  private generateAndEmitResize(video: HTMLElement, event: UIEvent) {
+    const msg: IResizeMessage = {
+      data: {
+        width: video.clientWidth,
+        height: video.clientHeight
+      },
+      type: MessageTypes.resize,
+      version: 1
+    }
+    this.emit(HtmlInputEvents.Resize, msg);
   }
 }

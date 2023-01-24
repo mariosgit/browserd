@@ -17,15 +17,19 @@ export class Input implements IInputHandler {
 
   public processAndRaiseMessage(msg: IInputMessage) {
     // console.log(`processAndRaiseMessage 1, ${this.windowid}, ${msg}`);
-    const events = this.convertToElectronMessages(msg) as any[];
 
-    events.filter((evt) => evt != null)
-      .forEach((evt) => {
-        // raise all the events on the electron control
-        // this.webContents.sendInputEvent(evt);
-        ipcRenderer.send('sendInputEvent', this.windowid, evt);
-        // console.log(`processAndRaiseMessage 2, ${this.windowid}, ${evt});`);
-      });
+    if(msg.type === 'resize') {
+      ipcRenderer.send('sendWindowEvent', this.windowid, msg);
+    } else {
+      const events = this.convertToElectronMessages(msg) as any[];
+      events.filter((evt) => evt != null)
+        .forEach((evt) => {
+          // raise all the events on the electron control
+          // this.webContents.sendInputEvent(evt);
+          ipcRenderer.send('sendInputEvent', this.windowid, evt);
+          // console.log(`processAndRaiseMessage 2, ${this.windowid}, ${evt});`);
+        });
+    }
   }
 
   /**
@@ -43,12 +47,11 @@ export class Input implements IInputHandler {
       // process touch events
       case "touch":
         const touchData = msg.data as { pointers: any[] };
-
         // process each pointer individually
         return touchData.pointers.map((pointer) => this.convertSingleTouch(pointer));
+
       case "keyboard":
         const keyData = msg.data as { key: string, state: string };
-
         return [this.convertSingleKey(keyData)];
 
       case "wheel":
@@ -73,6 +76,7 @@ export class Input implements IInputHandler {
       default:
         console.warn(`Input:convertToElectronMessages: Unsupported Message Type: ${msg.type}`);
         // throw new Error(`Unsupported Message Type: ${msg.type}`);
+        return [];
     }
   }
 

@@ -144,4 +144,16 @@ ipcMain.on('sendInputEvent', (event, winid, evt) => {
   }
 });
 
+ipcMain.on('sendWindowEvent', (event, winid, evt) => {
+  // e.g. resize
+  if(evt.type == 'resize') {
+    logger.info(`sendWindowEvent winid:${winid} evt:${JSON.stringify(evt.data)}`);
+    for(let win of ElectronBrowserWindow.getAllWindows()) {
+      if(win.id == winid) {
+        win.setSize(evt.data.width, evt.data.height);
+        break;
+      }
+    }
+  }
+});
 // module.exports = runtimeIgnoredExportValue;

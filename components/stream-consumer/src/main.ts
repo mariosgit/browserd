@@ -4,7 +4,7 @@ import SimplePeer from "simple-peer";
 import { v4 as uuid } from "uuid";
 import { Signal } from "../../shared/src/signal";
 import { BaseSignalProvider, ISignalPeer } from "../../shared/src/signal-provider";
-import { HtmlInputEvents, InputMonitor } from "./input";
+import { HtmlInputEvents, InputMonitor, IResizeMessage, MessageTypes } from "./input";
 
 const logger = pino();
 /**
@@ -84,7 +84,23 @@ export const connect = async () => {
   });
 
   peer.on("error", (err) => logger.error(err));
-  peer.on("connect", () => logger.info("connect"));
+  peer.on("connect", () => {
+    logger.info("connect");
+    // send initial video size...
+    const videoElement = $("#remote-video") as any as HTMLVideoElement[];
+    const msg: IResizeMessage = {
+      data: {
+        width: videoElement[0].clientWidth,
+        height: videoElement[0].clientHeight
+      },
+      type: MessageTypes.resize,
+      version: 1
+    }
+    peer.send(JSON.stringify(msg));
+    logger.info("connect resize", msg);
+    // hide html config
+    $("#container").hide();
+  });
   peer.on("close", () => logger.info("disconnect"));
   peer.on("signal", async (data) => {
     // unwrap
@@ -126,10 +142,12 @@ export const startStreaming = (rstream: MediaStream, peer: SimplePeer.Instance) 
   inputMonitor.on(HtmlInputEvents.Mousedown, sendInputToPeer);
   inputMonitor.on(HtmlInputEvents.Mousemove, sendInputToPeer);
   inputMonitor.on(HtmlInputEvents.Wheel, sendInputToPeer);
+  inputMonitor.on(HtmlInputEvents.Resize, sendInputToPeer)
 };
 
 $(document).ready(() => {
-  $("#connect").click(() => connect());
+  $("#connect").on("click", () => connect());
+  $("#topbar").on("click", () => { $("#container").toggle(); });
 
   // populate settings
   const store = window.localStorage;

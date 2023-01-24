@@ -117,7 +117,7 @@ export class Application implements IApplication {
     });
     contentWindow.toBrowserWindow().webContents.backgroundThrottling = false;
     contentWindow.toBrowserWindow().menuBarVisible = false;
-    // contentWindow.toBrowserWindow().webContents.setFrameRate(25);
+    contentWindow.toBrowserWindow().webContents.setFrameRate(25);
     // contentWindow.toBrowserWindow().hide();
     // contentWindow.toBrowserWindow().show();
 
